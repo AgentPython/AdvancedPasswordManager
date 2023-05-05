@@ -12,6 +12,8 @@ packages = [
 python = "^3.10"
 rich = "^13.3.5"
 halo = "^0.0.31"
+termtosvg = "^1.1.0"
+pycryptodome = "^3.17"
 
 [tool.poetry.scripts]
 app = "app.main:main"

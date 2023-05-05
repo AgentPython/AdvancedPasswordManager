@@ -23,7 +23,7 @@ def main(obj: DataManipulation):
             mkdir('db/')
         except FileExistsError:
             pass
-
+    
         master_password = Prompt.ask("Enter master password", password=True)
         master_password_verification = Prompt.ask("Verify your master password", password=True)
 
