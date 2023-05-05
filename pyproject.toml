@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "advancedpasswordmanager"
+version = "0.1.0"
+description = ""
+authors = ["jo-project <jo.project.0911@gmail.com>"]
+readme = "README.md"
+packages = [
+  { include = "app" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+rich = "^13.3.5"
+halo = "^0.0.31"
+
+[tool.poetry.scripts]
+app = "app.main:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
