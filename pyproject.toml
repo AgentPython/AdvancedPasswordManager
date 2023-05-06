@@ -1,12 +1,11 @@
 [tool.poetry]
-name = "advancedpasswordmanager"
+name = "apasswordmanager"
 version = "0.1.0"
 description = ""
 authors = ["jo-project <jo.project.0911@gmail.com>"]
 readme = "README.md"
-packages = [
-  { include = "app" }
-]
+license = "LGPL-2.1-or-later"
+packages = [{include = "apasswordmanager", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -18,7 +17,7 @@ pyperclip = "^1.8.2"
 plyer = "^2.1.0"
 
 [tool.poetry.scripts]
-app = "app.main:main"
+app = "apasswordmanager.main:main"
 
 [build-system]
 requires = ["poetry-core"]
