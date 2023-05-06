@@ -1,9 +1,10 @@
-import sys
-import pyperclip
+from sys import exit
 
+from pyperclip import copy, PyperclipException
+
+from rich import box
 from rich.prompt import IntPrompt, Prompt, Confirm
 from rich.table import Table
-from rich import box
 from rich.console import Console
 
 from termcolor import colored
@@ -13,8 +14,10 @@ from .encryption import DataManipulation
 from .exceptions import *
 from .config import prompt_menu, prompt_title
 
+# Create console
 console = Console()
 
+# Create prompt table
 table = Table(box=box.ROUNDED, show_header=False)
 table.add_column("Key")
 table.add_column("Value")
@@ -56,9 +59,9 @@ class Manager:
                 copy_to_clipboard = Confirm.ask("Copy password to clipboard?")
                 if copy_to_clipboard:
                     try:
-                        pyperclip.copy(password)
+                        copy(password)
                         print(colored(f"{self.obj_.checkmark_} Password copied to clipboard", "green"))
-                    except pyperclip.PyperclipException:
+                    except PyperclipException:
                         print(colored(f"{self.obj_.x_mark} If you see this message on Linux. Use `sudo apt-get install xsel` for copying to work", "red"))
                 else:
                     pass
@@ -133,7 +136,7 @@ class Manager:
             return self.__return_generated_password(website)
         except UserExits:
             print(colored("Exiting...", "red"))
-            sys.exit()
+            exit()
 
     def update_db(self): # option 1 on main.py
         """Add or update a password in the DB
@@ -315,7 +318,7 @@ class Manager:
                 try:
                     self.obj_.delete_all_data(self.filename_, self.master_file_, stored_master, entered_master)
                     print(colored(f"{self.obj_.checkmark_} All Data Deleted successfully. {self.obj_.checkmark_}", "green"))
-                    sys.exit()
+                    exit()
                 except MasterPasswordIncorrect:
                     raise MasterPasswordIncorrect
         elif not confirmation:

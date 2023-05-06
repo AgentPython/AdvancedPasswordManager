@@ -1,14 +1,16 @@
 import string
 
-from halo import Halo
-from termcolor import colored
+from random import choice
 from os import path, remove
 from json import load, dump
-from Crypto.Cipher import AES
-from .exceptions import *
-from rich.prompt import Prompt
-from random import choice
+
 from halo import Halo
+from termcolor import colored
+from rich.prompt import Prompt
+from Crypto.Cipher import AES
+
+from .exceptions import *
+
 
 class DataManipulation:
     def __init__(self):
