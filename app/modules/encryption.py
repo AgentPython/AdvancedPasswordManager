@@ -72,6 +72,30 @@ class DataManipulation:
         encrypted_data = cipher.encrypt(data_to_encrypt).hex()
         self.__save_password(filename, encrypted_data, nonce, website)
 
+    def decrypt_all_data(self, master_pass, filename):
+
+        plaintext_passwords = []
+        if path.isfile(filename):
+            try:
+                with open(filename, 'r') as jsondata:
+                    jfile = load(jsondata)
+            except KeyError:
+                raise PasswordNotFound
+        else:
+            raise PasswordFileDoesNotExist
+
+        formatted_master_pass = master_pass + "================" 
+        master_pass_encoded = formatted_master_pass[:16].encode('utf-8')
+        for website, encrypted in jfile.items():
+            nonce = bytes.fromhex(encrypted['nonce'])
+            password = bytes.fromhex(encrypted['password'])
+            cipher = AES.new(master_pass_encoded, AES.MODE_EAX, nonce=nonce)
+            plaintext_password = cipher.decrypt(password).decode('utf-8')
+            plaintext_passwords.append({ "Website": website, "Password": plaintext_password })
+
+        return plaintext_passwords
+
+
     def decrypt_data(self, master_pass, website, filename):
         """Decrypts the password and prints it to the screen
 
@@ -138,7 +162,7 @@ class DataManipulation:
             
             passwords_lst = ""
             for i in pass_list:
-                passwords_lst += "--{}\n".format(i)
+                passwords_lst += "-- {}\n".format(i)
             
             if passwords_lst == "":
                 raise PasswordFileIsEmpty

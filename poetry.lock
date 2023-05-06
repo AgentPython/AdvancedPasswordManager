@@ -180,6 +180,24 @@ files = [
 ]
 
 [[package]]
+name = "plyer"
+version = "2.1.0"
+description = "Platform-independent wrapper for platform-dependent APIs"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "plyer-2.1.0-py2.py3-none-any.whl", hash = "sha256:1b1772060df8b3045ed4f08231690ec8f7de30f5a004aa1724665a9074eed113"},
+    {file = "plyer-2.1.0.tar.gz", hash = "sha256:65b7dfb7e11e07af37a8487eb2aa69524276ef70dad500b07228ce64736baa61"},
+]
+
+[package.extras]
+android = ["pyjnius"]
+dev = ["flake8", "mock"]
+ios = ["pyobjus"]
+macosx = ["pyobjus"]
+
+[[package]]
 name = "pycryptodome"
 version = "3.17"
 description = "Cryptographic library for Python"
@@ -236,6 +254,17 @@ files = [
 
 [package.extras]
 plugins = ["importlib-metadata"]
+
+[[package]]
+name = "pyperclip"
+version = "1.8.2"
+description = "A cross-platform clipboard module for Python. (Only handles plain text for now.)"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "pyperclip-1.8.2.tar.gz", hash = "sha256:105254a8b04934f0bc84e9c24eb360a591aaf6535c9def5f29d92af107a9bf57"},
+]
 
 [[package]]
 name = "pyte"
@@ -342,7 +371,23 @@ files = [
     {file = "wcwidth-0.2.6.tar.gz", hash = "sha256:a5220780a404dbe3353789870978e472cfe477761f06ee55077256e509b156d0"},
 ]
 
+[[package]]
+name = "winrt"
+version = "1.0.21033.1"
+description = "Access Windows Runtime APIs from Python"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "winrt-1.0.21033.1-cp37-none-win32.whl", hash = "sha256:d035570ce2cf7e8caa785abb43f25a6ede600c2cde0378c931495bdbeaf1a075"},
+    {file = "winrt-1.0.21033.1-cp37-none-win_amd64.whl", hash = "sha256:da3ca3626fb992f2efa4528993d4760b298f399a7f459f7e070a2f8681d82106"},
+    {file = "winrt-1.0.21033.1-cp38-none-win32.whl", hash = "sha256:224e13eb172435aaabdc7066752898a61dae0fcc3022f6f8cbd1ce953be3358c"},
+    {file = "winrt-1.0.21033.1-cp38-none-win_amd64.whl", hash = "sha256:f5ab502117da4777ab49b846ad1919fbf448bd5e49b4aca00cc59667bae2c362"},
+    {file = "winrt-1.0.21033.1-cp39-none-win32.whl", hash = "sha256:9d7b7d2e48c301855afd3280aaf51ea0d3c683450f46de2db813f71ee1cd5937"},
+    {file = "winrt-1.0.21033.1-cp39-none-win_amd64.whl", hash = "sha256:ad4afd1c7b041a6b770256d70e07093920fa83eecd80e42cac2704cd03902243"},
+]
+
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "bf26e9823d3e027587b5c0bf585b98705f3dcf98cb5d702a07924c83cfdc6c44"
+content-hash = "ce3ddd0919ed494b5b796ee15ee5948a74adde9a38c1b62190188c52cdcbb081"
