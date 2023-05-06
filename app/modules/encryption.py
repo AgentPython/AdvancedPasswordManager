@@ -8,6 +8,7 @@ from halo import Halo
 from termcolor import colored
 from rich.prompt import Prompt
 from Crypto.Cipher import AES
+from base64 import b64decode, b64encode
 
 from .exceptions import *
 
@@ -19,12 +20,35 @@ class DataManipulation:
         self.x_mark = "\u2717"
         self.specialChar_ = "!@#$%^&*()-_"
 
-    def __save_password(self, filename, data, nonce, website):
+    def encrypt(self, message, key):
+        cipher = AES.new(key, AES.MODE_EAX)
+        encrypted, tag = cipher.encrypt_and_digest(message.encode('utf-8'))
+        encrypted_string = b64encode(encrypted)
+        tag_string = b64encode(tag)
+        nonce_string = b64encode(cipher.nonce)
+        # print('Cipher Message:', encrypted)
+        # print('Cipher Tag:', tag)
+        # print('Cipher Nonce:', cipher.nonce)
+        # print('Message:', encrypted_string)
+        # print('Tag:', tag_string)
+        # print('Nonce:', nonce_string)
+        return encrypted_string.hex(), tag_string.hex(), nonce_string.hex()
+
+    def decrypt(self, message, tag, key, nonce):
+        # print('Cipher Message:', message)
+        # print('Cipher Tag:', tag)
+        # print('Cipher Nonce:', nonce)
+        cipher = AES.new(key, AES.MODE_EAX, nonce=nonce)
+        res_message = cipher.decrypt_and_verify(message, tag)
+        return res_message
+
+
+    def __save_password(self, filename, data, tags, nonce, website):
         """Saves password to Database
 
         Arguments:
             filename {str} -- DB to save to
-            data {str} -- Password that will be saved
+            data {obj} -- Password that will be saved
             nonce {hexadecimal} -- Converted from byte type to hexadecimal as byte type is not supported in JSON
             website {str} -- Name of the website for the given password
         """
@@ -36,7 +60,8 @@ class DataManipulation:
                 with open(filename, 'r') as jsondata:
                     jfile = load(jsondata)
                 jfile[website]["nonce"] = nonce
-                jfile[website]["password"] = data
+                jfile[website]["tags"] = tags
+                jfile[website]['data'] = data
                 with open(filename, 'w') as jsondata:
                     dump(jfile, jsondata, sort_keys=True, indent=4)
             except KeyError:
@@ -44,13 +69,15 @@ class DataManipulation:
                     jfile = load(jsondata)
                 jfile[website] = {}
                 jfile[website]["nonce"] = nonce
-                jfile[website]["password"] = data
+                jfile[website]["data"] = data
+                jfile[website]["tags"] = tags
                 with open(filename, 'w') as jsondata:
                     dump(jfile, jsondata, sort_keys=True, indent=4)
         else:
             jfile = {website: {}}
             jfile[website]["nonce"] = nonce
-            jfile[website]["password"] = data
+            jfile[website]["data"] = data
+            jfile[website]["tags"] = tags
             with open(filename, 'w') as jsondata:
                 dump(jfile, jsondata, sort_keys=True, indent=4)
         spinner.stop()
@@ -61,22 +88,39 @@ class DataManipulation:
 
         Arguments:
             filename {str} -- DB to save to
-            data {str} -- Password that will be saved
+            data {obj} -- Password that will be saved
             master_pass {str} -- Master password to encrypt the password
             website {str} -- Name of the website for the given password
         """
 
         concatenated_password = master_pass + "================"
         key = concatenated_password[:16].encode('utf-8')
-        cipher = AES.new(key, AES.MODE_EAX)
-        nonce = cipher.nonce.hex()
-        data_to_encrypt = data.encode('utf-8')
-        encrypted_data = cipher.encrypt(data_to_encrypt).hex()
-        self.__save_password(filename, encrypted_data, nonce, website)
+        # print('===== Encrypt =====')
+        # print('Key:', key)
+        # print('===== Email =====')
+        encrypted_email, encrypted_email_tag, encrypted_email_nonce = self.encrypt(data['email'], key)
+        # print('===== Password =====')
+        encrypted_password, encrypted_password_tag, encrypted_password_nonce = self.encrypt(data['password'], key)
+        tags = {
+            "email": encrypted_email_tag,
+            "password": encrypted_password_tag
+        }
+
+        data = {
+            "email": encrypted_email,
+            "password": encrypted_password
+        }
+
+        nonce = {
+            "email": encrypted_email_nonce,
+            "password": encrypted_password_nonce
+        }
+        self.__save_password(filename, data, tags, nonce, website)
+
 
     def decrypt_all_data(self, master_pass, filename):
 
-        plaintext_passwords = []
+        plaintext_data = []
         if path.isfile(filename):
             try:
                 with open(filename, 'r') as jsondata:
@@ -89,13 +133,25 @@ class DataManipulation:
         formatted_master_pass = master_pass + "================" 
         master_pass_encoded = formatted_master_pass[:16].encode('utf-8')
         for website, encrypted in jfile.items():
-            nonce = bytes.fromhex(encrypted['nonce'])
-            password = bytes.fromhex(encrypted['password'])
-            cipher = AES.new(master_pass_encoded, AES.MODE_EAX, nonce=nonce)
-            plaintext_password = cipher.decrypt(password).decode('utf-8')
-            plaintext_passwords.append({ "Website": website, "Password": plaintext_password })
+            nonce_password_byte = bytes.fromhex(encrypted["nonce"]["password"])
+            nonce_password = b64decode(nonce_password_byte)
+            nonce_email_byte = bytes.fromhex(encrypted["nonce"]["email"])
+            nonce_email = b64decode(nonce_email_byte)
 
-        return plaintext_passwords
+            tag_password_byte = bytes.fromhex(encrypted["tags"]["password"])
+            tag_password = b64decode(tag_password_byte)
+            tag_email_byte = bytes.fromhex(encrypted["tags"]["email"])
+            tag_email = b64decode(tag_email_byte)
+
+            password_byte = bytes.fromhex(encrypted['data']["password"])
+            email_byte = bytes.fromhex(encrypted['data']["email"])
+            password = b64decode(password_byte)
+            email = b64decode(email_byte)
+            plaintext_email = self.decrypt(email, tag_email, master_pass_encoded, nonce_email).decode('utf-8')
+            plaintext_password = self.decrypt(password, tag_password, master_pass_encoded, nonce_password).decode('utf-8')
+            plaintext_data.append({ "Website": website, "Password": plaintext_password, "Email": plaintext_email })
+
+        return plaintext_data
 
 
     def decrypt_data(self, master_pass, website, filename):
@@ -111,19 +167,36 @@ class DataManipulation:
             try:
                 with open(filename, 'r') as jsondata:
                     jfile = load(jsondata)
-                nonce = bytes.fromhex(jfile[website]["nonce"])
-                password = bytes.fromhex(jfile[website]["password"])
+                nonce_password_byte = bytes.fromhex(jfile[website]["nonce"]["password"])
+                nonce_password = b64decode(nonce_password_byte)
+                nonce_email_byte = bytes.fromhex(jfile[website]["nonce"]["email"])
+                nonce_email = b64decode(nonce_email_byte)
+
+                tag_password_byte = bytes.fromhex(jfile[website]["tags"]["password"])
+                tag_password = b64decode(tag_password_byte)
+                tag_email_byte = bytes.fromhex(jfile[website]["tags"]["email"])
+                tag_email = b64decode(tag_email_byte)
+
+                password_byte = bytes.fromhex(jfile[website]['data']["password"])
+                email_byte = bytes.fromhex(jfile[website]['data']["email"])
+                password = b64decode(password_byte)
+                email = b64decode(email_byte)
             except KeyError:
                 raise PasswordNotFound
         else:
             raise PasswordFileDoesNotExist
 
-        formatted_master_pass = master_pass + "================"
-        master_pass_encoded = formatted_master_pass[:16].encode('utf-8')
-        cipher = AES.new(master_pass_encoded, AES.MODE_EAX, nonce=nonce)
-        plaintext_password = cipher.decrypt(password).decode('utf-8')
+        formatted_master_pass = master_pass + "================" 
+        master_pass_encoded = formatted_master_pass[:16].encode('utf-8') 
+        # print('====== decrypt ======')
+        # print('Key:', master_pass_encoded)
+        # print('====== Password ======')
+        plaintext_password = self.decrypt(password, tag_password, master_pass_encoded, nonce_password).decode('utf-8')
+        # print('====== Email ======')
+        plaintext_email = self.decrypt(email, tag_email, master_pass_encoded, nonce_email).decode('utf-8')
 
-        return plaintext_password
+        plaintext_data = {"Website": website, "Email": plaintext_email, "Password": plaintext_password}
+        return plaintext_data
 
     def generate_password(self):
         """Generates a random password

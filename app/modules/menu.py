@@ -52,21 +52,20 @@ class Manager:
                 raise UserExits
         elif choice == 2:
             try:
-                string = self.load_password()
-                website = string.split(':')[0]
-                password = string.split(':')[1]
-                print(colored(f"Password for {website}: {password}", "yellow"))
-                copy_to_clipboard = Confirm.ask("Copy password to clipboard?")
-                if copy_to_clipboard:
-                    try:
-                        copy(password)
-                        print(colored(f"{self.obj_.checkmark_} Password copied to clipboard", "green"))
-                    except PyperclipException:
-                        print(colored(f"{self.obj_.x_mark} If you see this message on Linux. Use `sudo apt-get install xsel` for copying to work", "red"))
-                else:
-                    pass
+                string, table = self.load_password()
+                if isinstance(table, Table):
+                    console.print(table)
+                    copy_to_clipboard = Confirm.ask("Copy email and password to clipboard (ex: test@test.com:test)")
+                    if copy_to_clipboard:
+                        try:
+                            copy(string)
+                            print(colored(f"{self.obj_.checkmark_} Email and password copied to clipboard", "green"))
+                        except PyperclipException:
+                            print(colored(f"{self.obj_.x_mark} If you see this message on Linux. Use `sudo apt-get install xsel` for copying to work", "red"))
+                    else:
+                        pass
 
-                return self.begin()
+                    return self.begin()
             except UserExits:
                 raise UserExits
             except PasswordFileDoesNotExist:
@@ -157,14 +156,19 @@ class Manager:
         elif website.casefold().strip() == "exit":
             raise UserExits
         else:
+            gen_question_email = Prompt.ask(f"Enter an email for {website}")
+            if gen_question_email == "":
+                self.update_db()
 
-            gen_question = Confirm.ask(f"Do you want to generate a password for {website}?")
-            if gen_question == False:
+            gen_question_password = Confirm.ask(f"Do you want to generate a password for {website}?")
+            if gen_question_password == False:
                 password = Prompt.ask(f"Enter a password for {website}")
-                self.obj_.encrypt_data(self.filename_, password, self.master_pass_, website)
+                data = { "email": gen_question_email, "password": password }
+                self.obj_.encrypt_data(self.filename_, data, self.master_pass_, website)
             else:
                 password = self.__return_generated_password(website)
-                self.obj_.encrypt_data("db/passwords.json", password, self.master_pass_, website)
+                data = { "email": gen_question_email, "password": password }
+                self.obj_.encrypt_data("db/passwords.json", data, self.master_pass_, website)
 
     def load_password(self):
         """Loads a string of websites stored and asks user to enter a 
@@ -190,7 +194,7 @@ class Manager:
             return self.load_password()
         else:
             try:
-                plaintext = self.obj_.decrypt_data(self.master_pass_, website, self.filename_)
+                plaintext_data = self.obj_.decrypt_data(self.master_pass_, website, self.filename_)
             except PasswordNotFound:
                 print(colored(f"{self.obj_.x_mark} Password for {website} not found {self.obj_.x_mark}", "red"))
                 return self.load_password()
@@ -199,9 +203,15 @@ class Manager:
                 return self.begin()
             
             # see https://pypi.org/project/clipboard/ for copying to clipboard
-            final_str = f"{website}:{plaintext}"
+            table = Table(box=box.SQUARE_DOUBLE_HEAD, title=plaintext_data['Website'])
+            table.add_column("Email")
+            table.add_column("Password")
 
-            return final_str
+            table.add_row(plaintext_data['Email'], plaintext_data['Password'])
+
+            email_password_combination = f"{plaintext_data['Email']}:{plaintext_data['Password']}"
+
+            return email_password_combination,table
 
     def load_passwords(self):
         try:
@@ -215,12 +225,13 @@ class Manager:
             print(colored(f"{self.obj_.x_mark} DB not found. Try adding a password {self.obj_.x_mark}", "red"))
             return self.begin()
 
-        table = Table(box=box.SQUARE_DOUBLE_HEAD)
+        table = Table(box=box.SQUARE_DOUBLE_HEAD, title="All Websites")
         table.add_column("Website")
+        table.add_column("Email")
         table.add_column("Password")
 
         for data in plaintext_passwords:
-            table.add_row(data['Website'], data['Password'])
+            table.add_row(data['Website'], data['Email'], data['Password'])
 
         return table
 
